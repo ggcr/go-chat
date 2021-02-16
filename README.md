@@ -13,4 +13,5 @@
 - ~~Implement WebSockets to update connected clients when someone sends a message~~
 - ~~HTML Template msg on client~~
 - Implement goroutines support
+- Refactor the App
 - Test the App
