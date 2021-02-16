@@ -1,6 +1,8 @@
 # Go Chat App
 
-- net/http package
+## Packages Used
+
+- net/http
 - html/template
 - gorilla/mux
 - gorilla/session
