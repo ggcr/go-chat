@@ -14,4 +14,5 @@
 - ~~HTML Template msg on client~~
 - Implement goroutines support
 - Refactor the App
+    - Get rid of Global variables and implement types
 - Test the App
