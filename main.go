@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -12,15 +13,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type msg struct {
-	user_id  interface{}
-	Username interface{}
-	Date     string
-	Body     interface{}
+type connection struct {
+	// The websocket connection.
+	ws *websocket.Conn
+
+	user_id interface{}
 }
 
 var upgrader = websocket.Upgrader{}
 var tpl *template.Template
+var connections = make(map[*connection]bool)
 
 func init() {
 	tpl = template.Must(template.ParseGlob("./tpl/*.html"))
@@ -59,7 +61,6 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if username := r.PostFormValue("fname"); username != "" { // User POST
-			fmt.Println("USER POST")
 			// Add user to db
 			id := conn.AddUser(username)
 
@@ -74,17 +75,13 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 				log.Fatalln(err)
 			}
 		} else { // Chat POST
-			fmt.Println("CHAT POST")
 			msgBody := r.PostFormValue("msg-body")
 
 			// Store msg in DB
-			conn.StoreMSG(Session.GetVal("id"), msgBody, time.Now().Format("01-02-2006"))
+			conn.StoreMSG(Session.GetVal("id"), msgBody, time.Now().Format("01-02-2006"), Session)
 
 			// Build chat msgs
 			data := conn.GetChatMsgs(Session)
-			for _, v := range data {
-				fmt.Println(v)
-			}
 
 			err := tpl.ExecuteTemplate(w, "chat.html", data)
 			if err != nil {
@@ -93,7 +90,6 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		fmt.Println("ELSE")
 		data := conn.GetChatMsgs(Session)
 		err := tpl.ExecuteTemplate(w, "chat.html", data)
 		if err != nil {
@@ -102,25 +98,50 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func reader(conn *websocket.Conn) {
+func reader(conn connection, s *ctrl.Sess) {
+	// Init Db conn
+	db := ctrl.NewConnection()
+	defer db.CloseConnection()
+
 	for {
-		mt, p, err := conn.ReadMessage()
+		_, p, err := conn.ws.ReadMessage()
 		if err != nil {
 			panic(err)
 		}
-		log.Println(string(p))
+		// build msg
 
-		if err := conn.WriteMessage(mt, p); err != nil {
-			panic(err)
+		// store db
+		m := db.StoreMSG(s.GetVal("id"), string(p), time.Now().Format("01-02-2006"), s)
+
+		// broadcast to all clients
+		for k, v := range connections {
+			if v {
+				m.Sess_user_id = k.user_id
+				b, err := json.Marshal(m)
+				if err != nil {
+					panic(err)
+				}
+				if err := k.ws.WriteJSON(string(b)); err != nil {
+					panic(err)
+				}
+			}
 		}
 	}
 }
 
 func WsEndpoint(w http.ResponseWriter, r *http.Request) {
+	// Create Session
+	Session := ctrl.CreateSess(r)
+
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		panic(err)
 	}
-	reader(ws)
+	// connections map[*connection]bool
+	fmt.Println("HELO")
+	c := connection{ws, Session.GetVal("id")}
+	connections[&c] = true
+	fmt.Println(connections)
+	reader(c, Session)
 	_ = ws
 }

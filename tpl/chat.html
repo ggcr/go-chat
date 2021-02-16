@@ -45,7 +45,6 @@
             }
         }
     </style>
-    <script src="ws.js"></script>
 </head>
 
 <body>
@@ -54,7 +53,7 @@
     <div id="chatLog" class="chatLog">
         <div class="card">
             <div class="card-body" class="overflow-auto">
-                <ul class="list-group">
+                <ul class="list-group" id="ulLog">
                     {{range .}}
                     {{if eq .Sess_user_id .User_id}}
                     <li class="list-group-item border m-1 bg-light" style="text-align: end;">
@@ -66,6 +65,8 @@
                         </div>
                         <p class="p-msg mb-0 mt-4 text-justify">
                             {{.Body}}
+                        <h1>{{.Sess_user_id}}</h1>
+                        <h1>{{.User_id}}</h1>
                         </p>
                     </li>
                     {{else}}
@@ -86,18 +87,63 @@
                 </ul>
             </div>
             <div class="card-footer">
-                <form method="POST" action="/chat">
-                    <div class="input-group">
-                        <input type="text" class="form-control" name="msg-body">
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="submit">Submit</button>
-                        </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="msg-body" name="msg-body" value="">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" id="submit-btn" type="submit">Submit</button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
     </div>
+
+    <script>
+        document.getElementById("msg-body").addEventListener("keyup", function (event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                document.getElementById("submit-btn").click();
+            }
+        });
+
+        let socket = new WebSocket("ws://localhost:8080/ws")
+
+        socket.onmessage = function (msg) {
+            console.log("new msg")
+            let obj = JSON.parse(msg["data"]);
+            if (obj.msgBody != "") {
+                var jsonObj = JSON.parse(obj)
+                appendNewMsg(jsonObj)
+                document.getElementById("msg-body").value = ""
+            }
+        }
+
+        let btn = document.getElementById("submit-btn")
+        btn.onclick = function () {
+            let msgBody = document.getElementById("msg-body").value
+            console.log(msgBody)
+            socket.send(msgBody)
+        }
+
+        function appendNewMsg(obj) {
+            let html = ""
+            if (obj.User_id == obj.Sess_user_id) {
+                html = '<li class="list-group-item border m-1 bg-light" style="text-align: end;"><div style="float:right;width:75%"><p class="p-author mb-0" style="font-weight: bold;">' + obj.Username + '</p></div ><div style="float:left;width:25%;"><p class="mb-2 text-muted" style="text-align: start;"><small>' + obj.Date + '</small></p></div><p class="p-msg mb-0 mt-4 text-justify">' + obj.Body + '</p></li>'
+            } else {
+                html = '<li class="list-group-item border m-1"><div style="float:left;width:75%"><p class="p-author mb-0" style="font-weight: bold;">' + obj.Username + '</p></div><div style="float:right;width:25%;"><p class="mb-2 text-muted" style=" text-align: end;"><small>' + obj.Date + '</small></p></div><p class="p-msg mb-0 mt-4 text-justify">' + obj.Body + '</p></li>'
+            }
+            console.log(html)
+            n = htmlToElement(html)
+            document.getElementById("ulLog").appendChild(n)
+        }
+
+        function htmlToElement(html) {
+            var template = document.createElement('template');
+            html = html.trim(); // Never return a text node of whitespace as the result
+            template.innerHTML = html;
+            return template.content.firstChild;
+        }
+    </script>
 </body>
 
 </html>

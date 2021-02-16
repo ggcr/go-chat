@@ -1,7 +1,6 @@
 package ctrl
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -13,15 +12,15 @@ type msg struct {
 	Sess_user_id interface{}
 }
 
-func (c *Conn) StoreMSG(user_id interface{}, msgBody interface{}, date string) {
+func (c *Conn) StoreMSG(user_id interface{}, msgBody interface{}, date string, s *Sess) msg {
 	sqlStatement := `INSERT INTO messages (user_id, body, date) VALUES ($1, $2, $3) RETURNING id`
 
-	r, err := c.Sql.Exec(sqlStatement, user_id, msgBody, time.Now().Format("2006-01-02 15:04:05"))
+	_, err := c.Sql.Exec(sqlStatement, user_id, msgBody, time.Now().Format("2006-01-02 15:04:05"))
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(r)
+	return (msg{user_id, c.GetUserName(user_id), time.Now().Format("2006-01-02 15:04:05"), msgBody, s.GetVal("id")})
 }
 
 func (c *Conn) GetChatMsgs(s *Sess) []*msg {
