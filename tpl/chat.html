@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <Title>Chat</Title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <style>
+        .navbar-brand {
+            margin: 0px 20px;
+        }
+
+        h2 {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .card {
+            position: fixed;
+            right: 50%;
+            margin-right: -400px;
+            margin-top: -5px;
+            width: 800px;
+            height: 80%;
+        }
+
+        .card-body {
+            overflow-y: auto;
+        }
+
+        .text-justify {
+            text-justify: inter-word;
+        }
+
+        @media only screen and (max-width: 840px) {
+            .card {
+                position: fixed;
+                right: 50%;
+                margin-right: -250px;
+                margin-top: 20px;
+                width: 500px;
+            }
+        }
+    </style>
+    <script src="ws.js"></script>
+</head>
+
+<body>
+    {{template "navbar"}}
+    <h2 class="mb-3">Chatroom</h2>
+    <div id="chatLog" class="chatLog">
+        <div class="card">
+            <div class="card-body" class="overflow-auto">
+                <ul class="list-group">
+                    {{range .}}
+                    {{if eq .Sess_user_id .User_id}}
+                    <li class="list-group-item border m-1 bg-light" style="text-align: end;">
+                        <div style="float:right;width:75%">
+                            <p class="p-author mb-0" style="font-weight: bold;">{{.Username}}</p>
+                        </div>
+                        <div style="float:left;width:25%;">
+                            <p class="mb-2 text-muted" style=" text-align: start;"><small>{{.Date}}</small></p>
+                        </div>
+                        <p class="p-msg mb-0 mt-4 text-justify">
+                            {{.Body}}
+                        </p>
+                    </li>
+                    {{else}}
+                    <li class="list-group-item border m-1">
+                        <div style="float:left;width:75%">
+                            <p class="p-author mb-0" style="font-weight: bold;">{{.Username}}</p>
+                        </div>
+                        <div style="float:right;width:25%;">
+                            <p class="mb-2 text-muted" style=" text-align: end;"><small>{{.Date}}</small></p>
+                        </div>
+                        <p class="p-msg mb-0 mt-4 text-justify">
+                            {{.Body}}
+                        </p>
+                    </li>
+                    {{end}}
+                    {{end}}
+
+                </ul>
+            </div>
+            <div class="card-footer">
+                <form method="POST" action="/chat">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="msg-body">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="submit">Submit</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+
+</html>

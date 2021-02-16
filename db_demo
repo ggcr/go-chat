@@ -1,0 +1,20 @@
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS messages;
+
+CREATE TABLE users (
+    id SERIAL,
+    username VARCHAR(255) NOT NULL,
+    PRIMARY KEY(id) 
+); 
+
+CREATE TABLE messages (
+    id SERIAL,
+    user_id SERIAL,
+    body TEXT NOT NULL,
+    date DATE NOT NULL,
+    PRIMARY KEY(id),
+    CONSTRAINT fk_user
+    FOREIGN KEY(user_id)
+    REFERENCES users(id)
+);
+
