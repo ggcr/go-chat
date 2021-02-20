@@ -31,6 +31,7 @@ func (c *Conn) GetUserId(username interface{}) int {
 }
 
 func (c *Conn) GetUserName(user_id interface{}) interface{} {
+	fmt.Println("\n\nGET USERNAME: ID = %d", user_id)
 	var username interface{}
 	sqlStatement := `SELECT username FROM users WHERE id=$1`
 
@@ -38,6 +39,7 @@ func (c *Conn) GetUserName(user_id interface{}) interface{} {
 	case sql.ErrNoRows:
 		fmt.Println("No rows were returned!")
 	case nil:
+		fmt.Println(username)
 		return username
 	default:
 		panic(err)

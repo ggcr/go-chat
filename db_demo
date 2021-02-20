@@ -10,8 +10,8 @@ CREATE TABLE users (
 CREATE TABLE messages (
     id SERIAL,
     user_id SERIAL,
-    body TEXT NOT NULL,
-    date DATE NOT NULL,
+    body TEXT,
+    date DATE,
     PRIMARY KEY(id),
     CONSTRAINT fk_user
     FOREIGN KEY(user_id)

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/ggcr/gchat/ctrl"
@@ -51,7 +53,6 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 	conn := ctrl.NewConnection()
 	defer conn.CloseConnection()
 
-	// Create Session
 	Session := ctrl.CreateSess(r)
 
 	if r.Method == "POST" {
@@ -64,17 +65,23 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 			// Add user to db
 			id := conn.AddUser(username)
 
+			cookie := http.Cookie{Name: username, Value: strconv.Itoa(rand.Intn(1000000))}
+			http.SetCookie(w, &cookie)
+
 			Session.SetVal("username", username)
 			Session.SetVal("id", id)
 			Session.SaveSess(w, r)
 
 			data := conn.GetChatMsgs(Session)
+			fmt.Println(data)
 
 			err := tpl.ExecuteTemplate(w, "chat.html", data)
 			if err != nil {
 				log.Fatalln(err)
 			}
 		} else { // Chat POST
+			cookie, _ := r.Cookie("username")
+			fmt.Println(cookie)
 			msgBody := r.PostFormValue("msg-body")
 
 			// Store msg in DB
@@ -106,6 +113,7 @@ func reader(conn connection, s *ctrl.Sess) {
 	for {
 		_, p, err := conn.ws.ReadMessage()
 		if err != nil {
+			fmt.Println("err read msg reader")
 			panic(err)
 		}
 		// build msg
@@ -119,9 +127,11 @@ func reader(conn connection, s *ctrl.Sess) {
 				m.Sess_user_id = k.user_id
 				b, err := json.Marshal(m)
 				if err != nil {
+					fmt.Println("err json")
 					panic(err)
 				}
 				if err := k.ws.WriteJSON(string(b)); err != nil {
+					fmt.Println("err write json to broadcast")
 					panic(err)
 				}
 			}
@@ -130,18 +140,19 @@ func reader(conn connection, s *ctrl.Sess) {
 }
 
 func WsEndpoint(w http.ResponseWriter, r *http.Request) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
 	// Create Session
 	Session := ctrl.CreateSess(r)
 
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		fmt.Println("err upgrade")
 		panic(err)
 	}
-	// connections map[*connection]bool
-	fmt.Println("HELO")
+
 	c := connection{ws, Session.GetVal("id")}
 	connections[&c] = true
-	fmt.Println(connections)
+
 	reader(c, Session)
-	_ = ws
 }

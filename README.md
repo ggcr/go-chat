@@ -1,5 +1,7 @@
 # Go Chat App
 
+![Add Functionality Gif](demo/demo.gif)
+
 ## Packages Used
 
 - net/http
