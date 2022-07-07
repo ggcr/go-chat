@@ -1,5 +1,6 @@
 # Go Chat App
 Chat-room implemented with Go on the backend, use of WebSockets, Gorilla/mux, Gorilla/sessions and PostgreSQL.
+
 ![Add Functionality Gif](demo/demo.gif)
 
 ## Motivation
